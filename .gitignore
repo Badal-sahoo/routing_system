@@ -33,6 +33,9 @@ media/
 staticfiles/
 /static/
 
+# Dev-only management commands (e.g. seed_gps)
+backend/apps/graph/management/
+
 # Migrations — tracked by default; uncomment to ignore if that is your workflow
 # */migrations/*.py
 # !*/migrations/__init__.py
