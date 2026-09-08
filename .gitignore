@@ -36,6 +36,27 @@ staticfiles/
 # Dev-only management commands (e.g. seed_gps)
 backend/apps/graph/management/
 
+# Tests are written and run locally to verify behavior, but not committed.
+# All tests now live in the single file backend/tests.py; the apps/* patterns
+# stay so a per-app test file added later is ignored too.
+backend/tests.py
+backend/apps/*/tests.py
+backend/apps/*/tests/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Personal study/interview-prep docs and diagrams. Everything personal lives in
+# notes/ so one rule covers it: study guides, working notes, diagrams.
+# Root-anchored (leading slash) so it can never match anything inside
+# frontend/ or backend/.
+/notes/
+
+# Redis RDB persistence snapshots (created wherever redis-server happens to
+# run from) -- never meant to be committed.
+*.rdb
+
 # Migrations — tracked by default; uncomment to ignore if that is your workflow
 # */migrations/*.py
 # !*/migrations/__init__.py

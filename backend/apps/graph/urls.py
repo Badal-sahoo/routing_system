@@ -1,11 +1,9 @@
-from django.urls import path
+from rest_framework.routers import SimpleRouter
 
-from .views import AgentLocationView
+from .views import EdgeViewSet, NodeViewSet
 
-urlpatterns = [
-    path(
-        "agents/<int:agent_id>/location/",
-        AgentLocationView.as_view(),
-        name="agent-location",
-    ),
-]
+router = SimpleRouter()
+router.register("nodes", NodeViewSet)
+router.register("edges", EdgeViewSet)
+
+urlpatterns = router.urls

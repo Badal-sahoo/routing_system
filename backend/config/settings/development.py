@@ -1,17 +1,39 @@
-"""Development settings: everything in base plus a Redis cache backend."""
+import environ
 
-from .base import *  # noqa: F401,F403
+from .base import *
 
-DEBUG = True
+env = environ.Env()
 
-# django-redis as the default cache. DB index 1 keeps this app's cache/live
-# state separate from anything else that might use Redis DB 0.
+DEBUG = env.bool("DJANGO_DEBUG", default=True)
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": env("REDIS_CACHE_URL", default="redis://127.0.0.1:6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://127.0.0.1:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                {
+                    "address": env(
+                        "REDIS_CHANNEL_URL", default="redis://127.0.0.1:6379/2"
+                    ),
+                    "socket_timeout": 20,
+                }
+            ],
         },
     }
 }

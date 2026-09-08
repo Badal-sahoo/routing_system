@@ -1,20 +1,13 @@
-"""Redis helpers for high-frequency agent GPS state.
-
-We drop below the Django cache API to the raw redis client (via
-``get_redis_connection``) because we need Hash operations (HSET) and per-key
-TTLs, which the cache API does not expose.
-"""
-
+from django.conf import settings
 from django.utils import timezone
 from django_redis import get_redis_connection
 
-STATE_TTL_SECONDS = 30
-RATE_LIMIT_MAX = 10          # pings allowed per window
-RATE_LIMIT_WINDOW = 10       # window length in seconds
+STATE_TTL_SECONDS = settings.GPS_STATE_TTL_SECONDS
+RATE_LIMIT_MAX = settings.GPS_RATE_LIMIT_MAX
+RATE_LIMIT_WINDOW = settings.GPS_RATE_LIMIT_WINDOW
 
 
 def get_conn():
-    """Raw redis-py client backing the 'default' django-redis cache."""
     return get_redis_connection("default")
 
 
@@ -26,8 +19,13 @@ def ratelimit_key(agent_id):
     return f"ratelimit:agent:{agent_id}"
 
 
+def decode_state(state):
+    if not state:
+        return None
+    return {key.decode(): value.decode() for key, value in state.items()}
+
+
 def write_agent_state(conn, agent_id, lat, lng):
-    """Write {lat, lng, timestamp} to the agent's Hash and (re)set its TTL."""
     key = agent_state_key(agent_id)
     payload = {
         "lat": str(lat),
@@ -41,9 +39,28 @@ def write_agent_state(conn, agent_id, lat, lng):
     return payload
 
 
+def read_agent_state(conn, agent_id):
+    state = conn.hgetall(agent_state_key(agent_id))
+    return decode_state(state)
+
+
+def read_many_agent_states(conn, agent_ids):
+    agent_ids = list(agent_ids)
+    if not agent_ids:
+        return {}
+
+    pipe = conn.pipeline()
+    for agent_id in agent_ids:
+        pipe.hgetall(agent_state_key(agent_id))
+    results = pipe.execute()
+
+    states = {}
+    for agent_id, state in zip(agent_ids, results):
+        states[agent_id] = decode_state(state)
+    return states
+
+
 def is_rate_limited(conn, agent_id):
-    """Simple fixed-window limiter: INCR the counter, set its TTL on the first
-    hit of the window. Returns True once the agent exceeds its ping budget."""
     key = ratelimit_key(agent_id)
     current = conn.incr(key)
     if current == 1:
