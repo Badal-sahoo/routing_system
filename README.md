@@ -196,11 +196,4 @@ delivery can be watched start to finish without refreshing.
   from user login; see `AgentLocationView`'s docstring.
 - **No registration flow.** Users are created via `createsuperuser` /
   Django admin, not self-service signup — not in scope for this project.
-- **The SQLite fallback has no true row-level locking.** Leave `DB_NAME`
-  unset and the project runs on SQLite with zero setup, but `select_for_update()`
-  is silently ignored there — the guarantee comes from SQLite's file-level
-  write lock instead. On PostgreSQL (the default in `.env`) the same code gets
-  real per-row locking, no changes needed.
-- **Tests are written and run locally during development** (`manage.py test
-  tests` — everything lives in `backend/tests.py`) but are excluded from
-  version control via `.gitignore`.
+
